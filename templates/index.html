@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>RAISE APP</title>
+  </head>
+  <body>
+    <h1>RAISE APPLICATION</h1>
+    <h2>Robotic Autonomous Imaging Surface Evaluator</h2>
+    <p>Please fill in the following parameters to set up the experiment.</p>
+
+    <form method="POST" action="/RAISE">
+        <h3>Reagents</h3>
+        <p>Enter the name of reagent and its concentration in the following format: <i>reagent_name:reagent_concentration</i>. For example, <i>Ethanol:100</i> means 100% Ethanol. Note: reagent concentrations are unit agnostic.</p>
+        <p>To include water as a reagent, enter <i>H2O</i>.</p>
+        <table>
+            <tr>
+                <th>Slot #8</th>
+                <th>Column 1</th>
+                <th>Column 2</th>
+                <th>Column 3</th>
+                <th>Column 4</th>
+            </tr>
+            <tr>
+                <th>Row A</th>
+                <td>
+                    <input type="text" id="A1" name="A1"><br>
+                </td>
+                <td>
+                    <input type="text" id="A2" name="A2"><br>
+                </td>
+                <td>
+                    <input type="text" id="A3" name="A3"><br>
+                </td>
+                <td>
+                    <input type="text" id="A4" name="A4"><br>
+                </td>
+            </tr>
+            <tr>
+                <th>Row B</th>
+                <td>
+                    <input type="text" id="B1" name="B1"><br>
+                </td>
+                <td>
+                    <input type="text" id="B2" name="B2"><br>
+                </td>
+                <td>
+                    <input type="text" id="B3" name="B3"><br>
+                </td>
+                <td>
+                    <input type="text" id="B4" name="B4"><br>
+                </td>
+            </tr>
+        </table>
+
+        <h3>Number of Replicates per Experiment</h3>
+        <label for="num_replicates">n=</label>
+        <input type="number" id="num_replicates" name="num_replicates" value=3 min=1><br>
+
+        <h3>Bayesian Optimization Campaign Design</h3>
+        <p>Enter the reagent and target objective parameters to design the Bayesian Optimization campaigns. 
+            For the reagents, ensure that the reagent names match those of the reagnet names entered in the Reagents section above.
+            Enter concentration in the following format: <i>[start:end:step]</i>. The concentrations will in the range [<i>start</i>, <i>end</i>], inclusive, at intervals of <i>step</i>. 
+            Ensure that all possible combinations of reagent concentrations can be formulated from the stock solutions listed in the Reagents section above.
+        </p>
+        <table>
+            <tr>
+                <th>
+                    <label for="r1_name">Reagent 1</label>
+                </th>
+                <th>
+                    <label for="r1_conc_0">Range 1</label>
+                </th>
+                <th>
+                    <label for="r1_conc_1">Range 2</label>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="r1_name" name="r1_name">
+                </td>
+                <td>
+                    <input type="text" id="r1_conc_0" name="r1_conc_0">
+                </td>
+                <td>
+                    <input type="text" id="r1_conc_1" name="r1_conc_1">
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <th>
+                    <label for="r2_name">Reagent 2</label>
+                </th>
+                <th>
+                    <label for="r2_conc_0">Range 1</label>
+                </th>
+                <th>
+                    <label for="r2_conc_1">Range 2</label>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="r2_name" name="r2_name">
+                </td>
+                <td>
+                    <input type="text" id="r2_conc_0" name="r2_conc_0">
+                </td>
+                <td>
+                    <input type="text" id="r2_conc_1" name="r2_conc_1">
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <th>
+                    <label for="r3_name">Reagent 3</label>
+                </th>
+                <th>
+                    <label for="r3_conc_0">Range 1</label>
+                </th>
+                <th>
+                    <label for="r3_conc_1">Range 2</label>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="r3_name" name="r3_name">
+                </td>
+                <td>
+                    <input type="text" id="r3_conc_0" name="r3_conc_0">
+                </td>
+                <td>
+                    <input type="text" id="r3_conc_1" name="r3_conc_1">
+                </td>
+            </tr>
+        </table>
+
+        <form>
+            <table>
+                <tr>
+                    <th>
+                        <label for="t1_name">Target Parameter 1</label>
+                    </th>
+                    <th>
+                        <label for="t1_target">Target Value</label>
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" id="t1_name" name="t1_name" value="StaticContactAngle">
+                    </td>
+                    <td>
+                        <input type="text" id="t1_target" name="t1_target">
+                    </td>
+                </tr>
+            </table>
+        
+        <label for="t1_mode">Target Parameter 1 Mode</label><br>
+        <input type="radio" id="t1_match" name="t1_mode" value="MATCH" checked>
+        <label for="t1_bell">MATCH</label><br>
+        <!--
+        <input type="radio" id="t1_min" name="t1_mode" value="MIN">
+        <label for="t1_min">MIN</label><br>
+        <input type="radio" id="t1_max" name="t1_mode" value="MAX">
+        <label for="t1_max">MAX</label><br>
+        -->
+
+        <label for="t1_transform">Target Parameter 1 Transformation</label><br>
+        <input type="radio" id="t1_bell" name="t1_transform" value="BELL">
+        <label for="t1_bell">BELL</label><br>
+        <input type="radio" id="t1_triangular" name="t1_transform" value="TRIANGULAR" checked>
+        <label for="t1_triangular">TRIANGULAR</label><br>
+        <!--
+        <input type="radio" id="t1_linear" name="t1_transform" value="LINEAR">
+        <label for="t1_linear">LINEAR</label><br>
+        -->
+
+        <form>
+            <table>
+                <tr>
+                    <th>
+                        <label for="t2_name">Target Parameter 2</label>
+                    </th>
+                    <th>
+                        <label for="t2_target">Target Value</label>
+                    </th>
+                    <th>
+                        <label for="t2_bounds">Target Bounds</label>
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" id="t2_name" name="t2_name">
+                    </td>
+                    <td>
+                        <input type="text" id="t2_target" name="t2_target">
+                    </td>
+                    <td>
+                        <input type="text" id="t2_bounds" name="t2_bounds">
+                    </td>
+                </tr>
+            </table>
+        
+        <label for="t2_mode">Target Parameter 2 Mode</label><br>
+        <input type="radio" id="t2_match" name="t2_mode" value="MATCH">
+        <label for="t2_bell">MATCH</label><br>
+        <input type="radio" id="t2_min" name="t2_mode" value="MIN">
+        <label for="t2_min">MIN</label><br>
+        <input type="radio" id="t2_max" name="t2_mode" value="MAX">
+        <label for="t2_max">MAX</label><br>
+
+        <label for="t2_transform">Target Parameter 2 Transformation</label><br>
+        <input type="radio" id="t2_bell" name="t2_transform" value="BELL">
+        <label for="t2_bell">BELL</label><br>
+        <input type="radio" id="t2_triangular" name="t2_transform" value="TRIANGULAR">
+        <label for="t2_triangular">TRIANGULAR</label><br>
+        <input type="radio" id="t2_linear" name="t2_transform" value="LINEAR">
+        <label for="t2_linear">LINEAR</label><br>
+
+
+        <input type="submit" value="submit">
+    </form>
+  </body>
+</html>

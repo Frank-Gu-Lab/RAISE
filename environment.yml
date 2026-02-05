@@ -1,0 +1,28 @@
+name: RAISE
+
+channels:
+ - defaults
+ - conda-forge
+
+dependencies:
+ - python == 3.10
+ - pip
+ - ipykernel
+ - pillow
+ - pip:
+   - opentrons
+   - aionotify
+   - asyncio
+   - paho-mqtt
+   - aiomqtt
+   - opencv-python
+   - numpy
+   - pymongo
+   - pandas
+   - boto3
+   - numpy
+   - baybe
+   - scikit-image
+   
+
+

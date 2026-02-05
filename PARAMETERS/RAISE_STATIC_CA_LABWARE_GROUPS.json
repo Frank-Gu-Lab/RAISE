@@ -1,0 +1,16 @@
+{
+    "LEFT": [
+        9, 
+        3
+    ],
+    "RIGHT": [
+        11, 
+        6
+    ],
+    "mixing_wells": [
+        5
+    ],
+    "dest_wells": [
+        1
+    ]
+}

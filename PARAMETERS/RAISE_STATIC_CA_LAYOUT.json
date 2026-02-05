@@ -1,0 +1,84 @@
+{
+    "1": {
+        "labware_name": "open_back_staircase",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "2": null,
+    "3": {
+        "labware_name": "opentrons_96_tiprack_20ul",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "4": null,
+    "5": {
+        "labware_name": "corning_96_wellplate_360ul_flat",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "6": {
+        "labware_name": "opentrons_96_tiprack_300ul",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "7": null,
+    "8": {
+        "labware_name": "calab_8_tuberack_20000ul", 
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "9": {
+        "labware_name": "opentrons_96_tiprack_20ul",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "10": {
+        "labware_name": "fgl_sdl_p300_camera_rack",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "11": {
+        "labware_name": "opentrons_96_tiprack_300ul",
+        "offset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "LEFT": {
+        "pipette_name": "p20_single_gen2",
+        "tip_racks": [
+            9,
+            3
+        ]
+    },
+    "RIGHT": {
+        "pipette_name": "p300_single_gen2",
+        "tip_racks": [
+            11,
+            6,
+            10
+        ]
+    }
+}

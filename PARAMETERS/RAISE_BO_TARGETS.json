@@ -1,0 +1,11 @@
+{
+    "t1_name": "StaticContactAngle",
+    "t1_target": "70",
+    "t1_mode": "MATCH",
+    "t1_transform": "TRIANGULAR",
+    "t2_name": "",
+    "t2_target": "",
+    "t2_mode": "",
+    "t2_bounds": "",
+    "t2_transform": ""
+}

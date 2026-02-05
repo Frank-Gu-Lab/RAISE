@@ -1,0 +1,5 @@
+.DS_STORE
+__pycache__
+ServerInfo.txt
+secret_credentials.py
+hivemq-com-chain.der
