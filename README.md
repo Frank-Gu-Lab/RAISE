@@ -1,4 +1,4 @@
-# opentron-automation
+# RAISE: A self-driving laboratory for interfacial property formulation discovery 
 
 <img src='./images/RAISE_Workflow_Diagram.png' alt='general schematic of a self-driving RAISE workflow' height = 360 width = 480>
 
