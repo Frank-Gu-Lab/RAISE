@@ -22,7 +22,7 @@ Launch Client Process on OT-2
 5) Enter *python3 /var/lib/jupyter/notebooks/main.py* to start the OT-2 client application
 6) Once the OT-2 connects to the orchestrator, it will repeatedly await new command and then execute them.
 
-** NOTE: This repository only contains necessary software for running the orchestrator application. The software for the orchestrator to communicate with the OT-2 and the software layer on top of the Opentrons API is not included. Additionally, files that contain secret passwords and/or API keys for peripheral functions, such as interfacing with a database or launching the Bayesian Optimizer, are not included in this repository.
+** NOTE: This repository only contains necessary software for running the orchestrator application. The software for the orchestrator to communicate with the OT-2 and the software layer on top of the Opentrons API is not included. Additionally, files that contain secret passwords and/or API keys for peripheral functions, such as interfacing with a database or launching the Bayesian Optimizer, are not included in this repository. For access to the complete RAISE codebase, please contact the corresponding author, [Dr. Frank Gu](f.gu@utoronto.ca).
 
 ## Processing User Inputs
 One way for users to easily to set up different experiments, they can enter different parameters using a web user interface.
@@ -35,4 +35,4 @@ Launch Web Graphical User Interface
 5) Follow the instructions in the web interface and enter necessary parameters to the correct fields to design a new experiment
 6) Once all parameters are entered, press *submit* at the bottom of the page
 
-After user inputs are submitted, a USER_INPUTS.json configuration file is created in the PARAMETERS directory. Once the orchestrator launches, it reads from the configuration file and parses its contents to create additional configuration files that the orchestrator uses to design new experimental campaigns. Alternately, users can edit the USER_INPUTS.json configuration file directly to directly make edits to the campaign design.
+After user inputs are submitted, a USER_INPUTS.json configuration file is created in the PARAMETERS directory. Once the orchestrator launches, it reads from the configuration file and parses its contents to create additional configuration files that the orchestrator uses to design new experimental campaigns. Alternately, users can edit the USER_INPUTS.json configuration file to directly make edits to the campaign design.
