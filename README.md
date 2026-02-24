@@ -29,7 +29,7 @@ Launch Web Graphical User Interface
 1) Open a new terminal
 2) Navigate to RAISE directory
 3) Enter *python RAISE_App.py* in the terminal to lauch the web server
-4) Open a browser and enter *http://127.0.0.1/RAISE/* to open the user interface
+4) Open a browser and enter *http://127.0.0.1:5000/RAISE/* to open the user interface
 5) Follow the instructions in the web interface and enter necessary parameters to the correct fields to design a new experiment
 6) Once all parameters are entered, press *submit* at the bottom of the page
 
