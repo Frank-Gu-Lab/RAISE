@@ -1,6 +1,10 @@
 import socket
 
 class Server():
+    """
+    A class for instantiating a Server in a server-client relationship.
+    
+    """
     def __init__(self, name: str|None = None, port: int = 1200) -> None:
         self.name = name
         self.hostname = socket.gethostname()

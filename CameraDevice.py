@@ -9,43 +9,59 @@ import tkinter as tk
 import cv2
 
 class ImageCaptureError(Exception):
+    """
+    Error caused by failure to read data from camera device.
+    """
     pass
 
 class CameraDevice(ReadableDevice):
+    """
+    A class for representing a camera device that can read RGB image data.
+    """
+
     num_devices: int = 0
     def __init__(self, cam_idx: int = 0, name: str = None) -> None:
+        # Increase the device counter
+        # Useful if instantiating multiple cameras
         CameraDevice.num_devices += 1
         if name is None:
             self.name = f'Camera {CameraDevice.num_devices}'
         else:
             self.name = name
+        
         self.camera = None
+
+        # Attempt to open the camera device
         try:
             self.open(cam_idx)
         except:
             SystemExit(1)
-
+        
+        # Instantiate a multi-threading lock to prevent race condition while reading image data
         self.lock = Lock()
 
+        # Instantiate generator that produces image frames
         self.feed = self.get_feed()
 
+        # Confirm that the camera device opened properly by setting 
+        # the frame height, frame width, and capture speed
         if self.camera is not None:
             self.fps = self.camera.get(cv2.CAP_PROP_FPS)
             self.width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
             self.height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            #self.feed = self.camera_feed()
         
-        self.live_feed_thread= Thread(target=self.live_feed_wrapper, daemon=True)
-        #self.live_feed()
+        # Create a separate thread for viewing a live feed preview in a separate window
+        self.live_feed_thread = Thread(target=self.live_feed_wrapper, daemon=True)
     
     def open(self, cam_idx):
         super().open()
-        CameraDevice.num_devices += 1
+        # Instantiate a camera attribute with a VideoCapture object
         self.camera = cv2.VideoCapture(cam_idx)
         self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
         self.camera.get(cv2.CAP_PROP_FRAME_WIDTH, 1600)
         self.device_id = CameraDevice.num_devices
 
+        # Open the VideoCapture object if it is not already open
         if not self.camera.isOpened():
             if not self.camera.open(cam_idx):
                 raise IOError(f'Failed to Connect with Camera #{cam_idx}')
@@ -54,23 +70,37 @@ class CameraDevice(ReadableDevice):
         return f'Capture Device {self.device_id}'
 
     def get_width(self) -> int:
+        """
+        Returns the width of the capture frame
+        """
         return int(self.width)
 
     def get_height(self) -> int:
+        """
+        Returns the height of the capture frame
+        """
         return int(self.height)
     
     def get_fps(self) -> int:
+        """
+        Returns the capture speed of the camera device
+        """
         return int(self.fps)
 
     def get_name(self) -> str:
+        """
+        Returns the name of the camera device
+        """
         return self.name
     
     def get_feed(self) -> Generator[np.ndarray, None, None]:
+        """
+        A generator for producing image frames
+        """
         while True:
             ret, frame = self.camera.read()
             if not ret:
                 return None
-            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             yield frame
 
     def live_feed_wrapper(self):
@@ -109,7 +139,6 @@ class CameraDevice(ReadableDevice):
 
     def destroy_preview(self):
         cv2.destroyWindow(self.name)
-        #cv2.waitKey(1)
         print('Preview window closed')
 
     def read(self, fname: str | None = None, nt: int = 64):

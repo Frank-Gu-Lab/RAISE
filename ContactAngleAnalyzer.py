@@ -1,6 +1,6 @@
 # Contact Angle Analyzer
 from skimage import color, draw, io, feature, filters, exposure, morphology, measure, transform
-from multiprocessing import Event
+from threading import Event
 from multiprocessing.connection import Connection
 from typing import List, Tuple
 from datetime import datetime
@@ -14,19 +14,28 @@ import math
 matplotlib.use('agg')
 
 def raise_precheck(img: np.ndarray) -> bool:
+    """
+    Simple image processing algorithm to see if a liquid droplet has been deposited onto the substrate.
+    """
+    # Get the shape of the image
     img_shape: Tuple[int, int] = img.shape
     
+    # Conver the raw image into a grayscale image
     img_gray: np.ndarray | None = None
     if len(img_shape) == 3:
         img_gray = color.rgb2gray(img)
     else:
         img_gray = img
     
-    # Find search area
+    # Find search area within the image
+    # Ligh blur + thresholding
     img_blur = filters.gaussian(img_gray, sigma=1)
     thr = filters.threshold_otsu(img_blur)
+    # Get binary image mask
     img_thr = img_blur > thr
 
+    # Label the background in the binary mask
+    # Background is the "bright" areas of the image
     labels = measure.label(img_thr)
     props_tbl = measure.regionprops_table(labels, properties=('label', 'bbox', 'area'))
     idx_max = props_tbl['area'].argmax()
@@ -35,6 +44,7 @@ def raise_precheck(img: np.ndarray) -> bool:
                                          props_tbl['bbox-2'][idx_max], \
                                          props_tbl['bbox-3'][idx_max]
     
+    # Crop image to focus on areas with large bright backrounds
     if (min_col != 0) or (max_col != img_gray.shape[1]):
         background_width = max_col - min_col
         trim = background_width // 10
@@ -48,27 +58,25 @@ def raise_precheck(img: np.ndarray) -> bool:
 
     img_crop = img_gray[min_row:max_row , min_col:max_col]
 
-    # Find droplet
+    # Find droplet with circle detection
     edges = feature.canny(img_crop, sigma=5)
     hough_radii = np.arange(50, max_dimension, 5)
     hough_res = transform.hough_circle(edges, hough_radii)
     _, cx, cy, rad = transform.hough_circle_peaks(hough_res, hough_radii, num_peaks=1, total_num_peaks=5)
 
+    # If no sufficiently large circle is detected, return False
     #print(len(rad))
     if len(rad) == 0:
         return False
     
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #rr, cc = draw.circle_perimeter(cy[0], cx[0], rad[0], shape=img_crop.shape)
-    #img_crop = color.gray2rgb(img_crop)
-    #img_crop[rr, cc] = (255, 0, 0)
-    #ax.imshow(img_crop, cmap='Greys_r')
-    #plt.show()
-
+    # Otherwise, return True
     return True
 
 
-def crop_image(img: np.ndarray):
+def crop_image(img: np.ndarray) -> np.ndarray:
+    """
+    Crops an image to produce a image with the droplet in the center.
+    """
     assert len(img.shape) == 2
     img_height, img_width = img.shape
 
@@ -101,30 +109,19 @@ def crop_image(img: np.ndarray):
     min_col = max(0, col_c - max_dim * 5 // 8)
     max_col = min(col_c + max_dim * 5 // 8, img_width)
 
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #img_rgb = color.gray2rgb(img)
-    #rr, cc = draw.rectangle_perimeter((min_row, min_col), (max_row, max_col), shape=img.shape)
-    #img_rgb[rr, cc] = (255, 0, 0)
-    #ax.imshow(img_rgb, cmap='Greys_r')
-    #plt.show()
-    #plt.close()
-
+    # Returned cropped image
     return img[min_row:max_row, min_col:max_col]
 
-def set_baseline(img: np.ndarray):
+def set_baseline(img: np.ndarray) -> Tuple[np.ndarray, int]:
     assert len(img.shape) == 2
-    img_height, img_width = img.shape
+    _, img_width = img.shape
     img_blur = filters.gaussian(img, sigma=1)
     img_blur = exposure.rescale_intensity(img_blur, out_range='uint8')
-    #print(img_blur.shape, img_blur.dtype)
 
+    # Apply mild gamma correction to enhance contrast between bright and dark regions
     img_gamma_corr = exposure.adjust_gamma(img_blur, gamma=0.3)
 
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #ax.imshow(img_gamma_corr, cmap='Greys_r')
-    #plt.show()
-    #plt.close()
-
+    # Perform edge detection
     edges = filters.sobel(img_blur)
     edges = (edges - np.min(edges)) / np.max(edges) * 255
 
@@ -136,6 +133,7 @@ def set_baseline(img: np.ndarray):
     thr_edges = filters.threshold_otsu(edges)
     img_thr_edges = edges > thr_edges
 
+    # Label the binary image and isolate the prominent edge object
     labels = measure.label(img_thr)
     props_tbl = measure.regionprops_table(labels, properties=('label', 'area_bbox'))
     argmax = np.argmax(props_tbl['area_bbox'])
@@ -144,10 +142,13 @@ def set_baseline(img: np.ndarray):
     img_drop = labels == main_label
     #img_drop = morphology.binary_dilation(img_drop)
 
+    # Divide the isolated edge into two halves, one left and one right image
     mid_col = img_width // 2
     img_drop_left = img_thr_edges[:, :mid_col]
     img_drop_right = img_thr_edges[:, mid_col:]
 
+    # Find the bounding boxes of each sub-image
+    # Use bounding boxes to get lowest y-coordinate of each side of the droplet
     max_rows = []
     for img_half in [img_drop_left, img_drop_right]:
         labels = measure.label(img_half)
@@ -156,73 +157,79 @@ def set_baseline(img: np.ndarray):
         max_rows.append(props_tbl['bbox-2'][argmax])
     
     #print(max_rows)
+    # Based on which y-coordinate is higher, make all pixels below that y-coordinate dark
     baseline_row = min(max_rows) - 10
     img_drop[baseline_row:, :] = False
 
     img_processed = np.zeros(img_drop.shape, dtype='uint8')
     img_processed[img_drop] = 255
 
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #ax.imshow(img_processed, cmap='Greys_r')
-    #plt.show()
-    #plt.close()
-
+    # Return the processed image and y-coordinate set as the baseline
     return img_processed, baseline_row
 
-def get_main_contour(img: np.ndarray):
+def get_main_contour(img: np.ndarray) -> np.ndarray:
+    """
+    Find and return the largest contour in the image.
+    """
     assert len(img.shape) == 2
-    img_height, img_width = img.shape
 
     contours = measure.find_contours(img, level=0)
     argmax = np.argmax([len(contour) for contour in contours])
 
+    # Isolate the largest contour
     main_contour = contours[argmax]
+
+    # Ensure all contours are oriented the same
     if main_contour[0, 1] > main_contour[-1, 1]:
         main_contour = main_contour[::-1, :]
 
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #ax.imshow(img, cmap='Greys_r')
-    #ax.plot((main_contour.T)[1], (main_contour.T)[0])
-    #plt.show()
-    #plt.close()
-
+    # Return the main contour
     return main_contour
 
-def find_inflection_point(contour: np.ndarray):
-    y, x = contour.T
+def find_inflection_point(contour: np.ndarray) -> Tuple[int, int]:
+    """
+    Find the inflection point on a contour based on change in x-coordinates.
+    """
+    # Get the x-coordinates of the contour
+    _, x = contour.T
+
+    # Calculate the gradient of the x-coordinates
     gradients = np.gradient(x, np.arange(len(x)))
     assert len(x) == len(gradients)
 
+    # Create mask to identify areas where the gradient is positive
     signs = np.zeros(gradients.shape)
     mask = gradients > 0
     signs[mask] = 1
 
+    # Identify areas where there the gradient changes signs (i.e inflections)
     delta_signs = np.diff(signs, prepend=signs[0])
     #print(delta_signs)
     delta_signs = np.abs(delta_signs)
     assert len(delta_signs) == len(x)
 
+    # Count the number of inflections
     num_inflections = np.sum(delta_signs)
+
+    # Based on number of inflections, identify the corresponding index on the contour
     argwhere = np.nonzero(delta_signs)
-    #print(argwhere)
     idx_inflection = -1
     if num_inflections > 1:
+        # If there is more than one inflection, get the index of the second inflection point
         idx_inflection = argwhere[0][1]
     else:
+        # Otherwise, get the index of the first inflection point
         idx_inflection = argwhere[0][0]
 
-    #fig, ax = plt.subplots(figsize=(10, 6))
-    #ax.plot(gradients)
-    #ax.plot(delta_signs)
-    #plt.show()
-    #plt.close()
-
-    #print(idx_inflection)
+    # Return the index on the contour and number of inflections
     return int(idx_inflection), int(num_inflections)
 
 
-def get_drop_contact_points(contour: np.ndarray, side: str, num_inflections: int):
-    y, x = contour.T
+def get_drop_contact_points(contour: np.ndarray, side: str, num_inflections: int) -> np.ndarray:
+    """
+    Identify area of the contour corresponding to surface-liquid-air interface.
+    """
+    _, x = contour.T
     if side.lower() not in ['left', 'right']:
         raise ValueError
     
@@ -242,7 +249,12 @@ def get_drop_contact_points(contour: np.ndarray, side: str, num_inflections: int
     return contour[mask.T]
 
 
-def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: int):
+def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: int) -> Tuple[np.ndarray, float]:
+    """
+    Partition the main contour to isolate liquid droplet contour.
+    Also determines to what extent the droplet count is level or inclided.
+    Returns the contour partition corresponding to the liquid droplet and incline of the droplet.
+    """
     assert contour.shape[1] == 2
 
     mask = contour[:, 0] < baseline_row
@@ -257,8 +269,6 @@ def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: i
 
     contact_points = []
     for side, half_contour in zip(['left', 'right'], [left_contour_sample, right_contour_sample]):
-        y, x = half_contour.T
-        #gradient = np.gradient(x)
         idx_inflection, num_inflections = find_inflection_point(half_contour)
 
         if side == 'left':
@@ -275,6 +285,7 @@ def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: i
         #print(num_inflections)
         contact_points.append(get_drop_contact_points(neighborhood, side, num_inflections))
 
+    # FOR DEBUGGING
     #fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 6))
     #axes[0].imshow(img, cmap='Greys_r')
     #axes[0].scatter(left_contour_sample.T[1], left_contour_sample.T[0], s=5)
@@ -285,7 +296,10 @@ def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: i
     rows_intersect = np.intersect1d(*rows)
     row_contact_points = -1
     cps = []
+    
     if len(rows_intersect) == 0:
+        # If the the left and right contours do not share any common y-coordinates, 
+        # calculate the angle that the contact points makes with y=0
         rows_concat = np.concatenate((*rows,))
         row_contact_points = math.floor(np.median(rows_concat))
         
@@ -316,14 +330,17 @@ def partition_main_contour(img: np.ndarray, contour: np.ndarray, baseline_row: i
         return contour[cp_idx[0]:cp_idx[1], :], incline
         
     else:
+        # Otherwise, find the center common y-coordinate
+        # and set every contour point above it to be part of the droplet contour
         print(rows_intersect)
         row_contact_points = math.floor(np.median(rows_intersect))
 
     mask = drop_contour[:, 0] <= row_contact_points
     main_drop_contour = drop_contour[mask]
+
+    # FOR DEBUGGING
     #axes[1].imshow(img, cmap='Greys_r')
     #axes[1].plot((main_drop_contour.T)[1], (main_drop_contour.T)[0])
-
     #plt.show()
     #plt.close()
 
@@ -363,7 +380,7 @@ def raise_preprocessing(img: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.nda
     # Partition main contour
     main_drop_contour, incline_rad = partition_main_contour(img_processed, main_contour, baseline_row=baseline_row)
 
-    
+    # If the droplet is on an incline, rotate the image and the contours so that the droplet is level
     if incline_rad != 0:
         incline_deg = incline_rad * 180 / math.pi
         rotation_matrix = np.array([[math.cos(-incline_rad), math.sin(-incline_rad)],
@@ -376,6 +393,9 @@ def raise_preprocessing(img: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.nda
     return img_processed, main_contour[:, ::-1], main_drop_contour[:, ::-1]
 
 def measure_contact_angle(fname_input: str, fname_output: str) -> Tuple[float, float]:
+    """
+    Measure the static contact angle of a liquid droplet image and its RMSE.
+    """
     print('Reading input image...')
     img = io.imread(fname_input, as_gray=False)
     
@@ -386,20 +406,23 @@ def measure_contact_angle(fname_input: str, fname_output: str) -> Tuple[float, f
         contact_angle = np.nan
         rmse = np.nan
 
-        
+        # Perform custom image processing to extract the main contour and partitioned liquid contour
         img_processed, contour, drop_contour = raise_preprocessing(img)
 
-        # Try preprocessing by conan-ml if the RAISE preprocessing fails.
+        # Try preprocessing by conan-ml if the custom RAISE preprocessing fails.
+        # Github link: https://github.com/jdber1/conan-ml
         if contour is None:
             contour = extract_edges_CV(img_processed)
-            drop_contour, contact_points = prepare_hydrophobic(contour)
+            drop_contour, _ = prepare_hydrophobic(contour)
 
+        # Measure contact angle of the extracted droplet contour using Bashforth-Adams curve fitting
         print('Measuring contact angle...')
-        YL_angles, YL_Bo, YL_baselinewidth, YL_volume, YL_shape, YL_baseline, YL_errors, sym_errors, YL_timing = YL_fit(drop_contour)
+        YL_angles, _, _, _, YL_shape, YL_baseline, YL_errors, _, _ = YL_fit(drop_contour)
         
         contact_angle = round(YL_angles[0], 3)
         rmse = round(YL_errors['RMSE'], 3)
         
+        # Create a plot showing extracted contours overlaid ontop of the processed image and save it
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.imshow(img_processed, cmap='Greys_r')
         ax.plot(contour[:, 0], contour[:, 1], 'r', label='Main_Contour')
@@ -408,12 +431,14 @@ def measure_contact_angle(fname_input: str, fname_output: str) -> Tuple[float, f
         ax.plot(YL_baseline[:, 0], YL_baseline[:, 1], 'm', label='Fitted_Baseline')
         ax.legend(title='Legend')
         #ax.axis('equal')
+        # Set the contact angle and RMSE as the titles of the figure
         ax.set_title(f'Static Contact Angle: {contact_angle} Degrees', loc='left')
         ax.set_title(f'RMSE: {rmse}', loc='Right')
         print('Saving result image...')
         fig.savefig(fname_output, dpi=300)
 
     except:
+        # If there is an error, plot the raw image and save it
         fig, ax = plt.subplots(figsize=(10, 6))
         if img_processed is None:
             ax.imshow(img, cmap='Greys_r')
@@ -428,11 +453,15 @@ def measure_contact_angle(fname_input: str, fname_output: str) -> Tuple[float, f
     return contact_angle, rmse
     
 def analyze_data(connection: Connection, event: Event):
+    # Repeat the contact angle analysis in a loop
     while True:
+        # Receive message from RAISE orchestrator
         msg: str = connection.recv()
         assert isinstance(msg, str)
 
         output_file = None
+        # Receive file name and directory name of from RAISE orchestrator
+        # when the "START_EXPERIMENT" message is received
         if msg == 'START_EXPERIMENT':
             fname: str = connection.recv()
             assert isinstance(fname, str)
@@ -441,10 +470,12 @@ def analyze_data(connection: Connection, event: Event):
 
             dir_name: str = connection.recv()
         
+        # Exit loop when the "TERMINATE" message is receives
         if msg == 'TERMINATE':
             break
 
         assert output_file is not None
+        # Initilize empty list to store static contact angle measurements from replicate experiments
         contact_angle_lst: List[float] = []
         with output_file:
             # Record experiment start time
@@ -457,6 +488,8 @@ def analyze_data(connection: Connection, event: Event):
             while True:
                 msg = connection.recv()
                 if isinstance(msg, str):
+                    # Write the recorded static contact angle measurements to the output csv file 
+                    # when the "END_EXPERIMENT" message is received
                     if msg == 'END_EXPERIMENT':
                         # Record the mean and std of the contact angle
                         contact_angle_array = np.array(contact_angle_lst)
@@ -485,6 +518,8 @@ def analyze_data(connection: Connection, event: Event):
                     print(result)
                     assert output_file.write(result) == len(result)
 
+        # Summarize static contact angle measurements when the "END_EXPERIMENT" message is received
+        # and send the results back to the RAISE orchestrator
         # Calculate mean and std of contact angles
         contact_angle_array = np.array(contact_angle_lst)
         contact_angle_mean, contact_angle_std = np.nanmean(contact_angle_array), np.nanstd(contact_angle_array)

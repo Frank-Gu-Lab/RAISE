@@ -6,23 +6,22 @@ channels:
 
 dependencies:
  - python == 3.10
- - pip
- - ipykernel
- - pillow
+ - pip == 25.0
+ - ipykernel == 6.29.5
+ - pillow == 11.1.0
  - pip:
-   - opentrons
-   - aionotify
-   - asyncio
-   - paho-mqtt
-   - aiomqtt
-   - opencv-python
-   - numpy
-   - pymongo
-   - pandas
-   - boto3
-   - numpy
-   - baybe
-   - scikit-image
+   - opentrons == 8.3.0
+   - aionotify == 0.3.1
+   - asyncio == 3.4.3
+   - paho-mqtt == 2.1.0
+   - aiomqtt == 2.3.0
+   - opencv-python == 4.11.0.86
+   - numpy == 1.26.4
+   - pymongo == 4.11.1
+   - pandas == 2.2.3
+   - boto3 == 1.36.26
+   - baybe == 0.12.2
+   - scikit-image == 0.25.2
    
 
 

@@ -18,7 +18,7 @@ from datetime import datetime
 import traceback
 
 
-
+# This block of code is necessary for running on devices with Windows OS
 if sys.platform.lower() == "win32" or os.name.lower() == "nt":
     from asyncio import set_event_loop_policy, WindowsSelectorEventLoopPolicy
     set_event_loop_policy(WindowsSelectorEventLoopPolicy())
@@ -31,7 +31,7 @@ BO_LOGGING_CHANNEL = 'logging/bayesian'
 BO_OUTPUT_CHANNEL = 'output/bayesian'
 
 
-# Read and obtain cert
+# Read and obtain certificate
 der_fname = "hivemq-com-chain.der"
 try:
     print("Obtaining CA Certificate")

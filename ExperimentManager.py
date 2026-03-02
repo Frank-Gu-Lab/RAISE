@@ -11,7 +11,6 @@ from multiprocessing.connection import Connection
 
 from AsyncServerCommandHandler import AsyncServerCommandHandler
 from DBInterface import DBInterface as dbi
-from ContactAngleAnalyzer import raise_precheck
 #import paho.mqtt as mqtt
 
 import asyncio
