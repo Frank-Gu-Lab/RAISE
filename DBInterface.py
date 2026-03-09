@@ -15,6 +15,10 @@ import numpy as np
 
 
 class DBInterface:
+    """
+    Class representing connection to an external MongoDB database for long-term data storage.
+    This class contains several helper functions to easily upload image data and image metadata.
+    """
     def __init__(self, db_name: str, collection_name: str) -> None:
         #load_dotenv(find_dotenv())
         parse1, parse2 = MONGODB_CONNECTION_STRING.split('<password>')

@@ -8,6 +8,7 @@ class Server():
     def __init__(self, name: str|None = None, port: int = 1200) -> None:
         self.name = name
         self.hostname = socket.gethostname()
+        # Get IP address of the machine on the network
         self.ip_addr = socket.gethostbyname(self.hostname)
         self.port = port
         self.is_connected = False
@@ -20,7 +21,9 @@ class Server():
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.ip_addr, self.port))
+        # Currently, only listen for one client connection
         self.socket.listen(1)
+        # Set timeout of 60 secs
         self.socket.settimeout(60) # in seconds
     
     def get_socket(self) -> socket.socket:
