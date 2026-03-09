@@ -71,13 +71,17 @@ class ContactAngleMeasurementExperiment(Experiment):
         for k in lw_usage.keys():
             assert lw_usage[k] == len(allocated_wells[k])
 
+        # Create a variable to keep track of allocated wells/tips/space
         resource_tracker = {lw_group: self.well_generator(wells) for (lw_group, wells) in allocated_wells.items()}
 
+        # Drop previous tip attached to P20 pipette used to transfer liquid onto stage.
         for pipette in ['left']:
             await command_handler.drop_tip(pipette)
         
+        # Get mixing well
         mixing_well_1: str = next(resource_tracker['mixing_wells'])
 
+        # Get target formulation
         print(f'Target Concentration: {self.get_target_concentration()} {type(self.get_target_concentration())}')
         experiment_parameters: Dict[Tuple[str, str], float] = self.get_experiment_parameters()
         
@@ -85,6 +89,8 @@ class ContactAngleMeasurementExperiment(Experiment):
         # REPLACE THIS LATER!!!
         LEFT_MAX: float = 20.0
         #RIGHT_MAX: float = 1000.0
+
+        # Transfer liquid from stock solutions to the mixing well to mix reagents together
         for i, (liquid_name, volume) in enumerate(experiment_parameters.items(), start=1):
             PIPETTE_NAME: str = ''
             if volume <= LEFT_MAX:
@@ -108,8 +114,8 @@ class ContactAngleMeasurementExperiment(Experiment):
         
         
         mixing_slot, mixing_well_name = self.parse_well_name_string(mixing_well_1)
-        # Pick up new tip to mix solution
         
+        # Pick up new tip to mix solution
         print('Mixing')
         pipette_tip: str = next(resource_tracker['RIGHT'])
         slot, well_name = self.parse_well_name_string(pipette_tip)
@@ -121,23 +127,26 @@ class ContactAngleMeasurementExperiment(Experiment):
         await command_handler.drop_tip('right')
         
         
-
+        # Pick up new 20uL tip to transfer liquid from mixing well to stage
         print('Pick up 20uL Tip')
         left_tip_2: str = next(resource_tracker['LEFT'])
         slot, well_name = self.parse_well_name_string(left_tip_2)
         await command_handler.pick_up_tip('left', slot=slot, well_name=well_name)
 
-        # pick up camera tool
+        # Pick up camera tool with other pipette
         await command_handler.pick_up_tip('right', slot=10, well_name='A1')
 
+        # Pick up camera
         print('Pick up Camera')
         print('Transfer solution to stage')
         
+        # Perform replicate static contact angle measurement experiments
+        # depending on how many dest_wells are allocated.
         for dest_well in allocated_wells['dest_wells']:
-            # aspirate
+            # Aspirate
             await command_handler.aspirate('left', volume=3.5, slot=mixing_slot, well_name=mixing_well_name, 
                                       position='bottom', z=1)
-            # dispense
+            # Dispense
             dest_slot, dest_well_name = self.parse_well_name_string(dest_well)
 
             m_left: float = 20.5 # z_offset = mx + b
@@ -187,6 +196,7 @@ class ContactAngleMeasurementExperiment(Experiment):
                 await asyncio.sleep(5)
                 img: np.ndarray = await command_handler.capture_image(fname=fname)
             
+            # If there is a connection to a database, upload image metadata
             entry_id = np.nan
             if self.database_interface is not None:
                 entry_id = self.database_interface.write_metadata_to_db(slot_num=dest_slot, 
@@ -198,6 +208,8 @@ class ContactAngleMeasurementExperiment(Experiment):
                                                                         formulation=experiment_parameters,
                                                                         datetime=datetime.now())
             
+            # Send information about the experiment to the contact angle analyzer 
+            # to measure static contact angle of the captured image.
             experiment_parameters_cpy = dict()
             for k, v in experiment_parameters.items():
                 liquid_name, concentration = k
@@ -211,8 +223,9 @@ class ContactAngleMeasurementExperiment(Experiment):
                              json.dumps(self.get_target_concentration()), 
                              json.dumps(experiment_parameters_cpy)))
 
-        # return camera tool
+        # Return camera tool
         await command_handler.drop_tip('right', slot=10, well_name='A1', position='bottom', z=5)
         
+        # Sleep for 3 secs
         await asyncio.sleep(3)
         return
