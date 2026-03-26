@@ -1,5 +1,4 @@
 # Camera Class
-from ADC import ReadableDevice
 from PIL import Image, ImageTk
 from time import sleep
 from threading import Lock, Thread
@@ -14,7 +13,7 @@ class ImageCaptureError(Exception):
     """
     pass
 
-class CameraDevice(ReadableDevice):
+class CameraDevice():
     """
     A class for representing a camera device that can read RGB image data.
     """

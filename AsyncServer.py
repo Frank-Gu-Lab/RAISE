@@ -1,9 +1,8 @@
 # Server Class
-from ADC import AbstractDeviceConnection, Device
 import socket
 from time import time, sleep
 
-class AsyncServer(AbstractDeviceConnection):
+class AsyncServer():
     def __init__(self, name: str | None = None, port: int = 1200) -> None:
         self.name = name
         self.hostname = socket.gethostname()
@@ -26,9 +25,6 @@ class AsyncServer(AbstractDeviceConnection):
 
     def get_socket(self) -> socket.socket:
         return self.socket
-
-    def set_device(self, device: Device):
-        self.device = device
 
     async def __aenter__(self):
         self.connect()
