@@ -8,6 +8,17 @@ Surface wettability is a critical design parameter for biomedical devices, coati
 ## Orchestration Software Architecture
 The RAISE orchestrator coordinates liquid transfer capabilities of the Opentrons OT-2 and the image capture abilities of the camera device. The orchestrator software runs on a computer that connects to the OT-2 on a local area network and connects to the camera device via USB. The orchestrator communicates to the OT-2 by sending commands to the liquid handler. A simple program that is executed on the OT-2 receives incoming commands and interfaces with the Opentrons API to execute individual liquid transfer tasks.
 
+** NOTE: This repository only contains necessary software for running the orchestrator application. The software for the orchestrator to communicate with the OT-2 and the software layer on top of the Opentrons API is not included. Additionally, secret passwords and/or API keys for peripheral functions, such as interfacing with a database or connecting processes to the MQTT message handler, are contained in a secret_credentials.py file that is not included in this repository. More information can be found in the following links.
+ * https://www.hivemq.com/blog/mqtt-essentials-part-3-client-broker-connection-establishment/
+ * https://www.hivemq.com/blog/end-to-end-encryption-in-the-cloud/
+ * https://docs.hivemq.com/hivemq-cloud/authn-authz.html
+ * https://aiomqtt.bo3hm.com/
+ * https://www.mongodb.com/docs/get-started/?language=nodejs
+ * https://www.mongodb.com/docs/manual/reference/connection-string/?deployment-type=atlas&interface-atlas-only=atlas-cli
+ * https://www.mongodb.com/docs/atlas/connect-to-database-deployment/?interface=atlas-cli#connect-to-your-atlas-cluster
+
+For access to the complete RAISE codebase, please contact the corresponding author, [Dr. Frank Gu](mailto:f.gu@utoronto.ca).
+
 Launch Orchestrator
 1) Open a new terminal
 2) Navigate to RAISE directory
