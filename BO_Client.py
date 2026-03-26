@@ -39,7 +39,7 @@ try:
         cacert = f.read()
 except FileNotFoundError as e:
     print(f"Error: {e}")
-    print(f"{der_fname} file not found. For versions 0.4.2+, this file is required. Please upload this to the Pico W directly, you can generate this cert with cert_generator.py")
+    print(f"{der_fname} file not found. For versions 0.4.2+, this file is required.")
 
 # Create SSL context
 ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
